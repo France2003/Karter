@@ -2,6 +2,8 @@
   const form = document.querySelector(".lead-form");
   const status = document.querySelector(".form-status");
   const successCard = document.querySelector("#form-success-card");
+  const sheetEndpoint =
+    "https://script.google.com/macros/s/AKfycbzaKDdaExKDzNQWz_ZteORowhFYsHOFhZKbLlYuq9vLVd8wkK2t1tTFt9Q0YB7OKMHS2Q/exec";
   const ctas = document.querySelectorAll(".js-track-cta");
   const url = new URL(window.location.href);
   const utmFields = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
@@ -15,6 +17,22 @@
 
     if (typeof window.gtag === "function") {
       window.gtag("event", eventName, payload);
+    }
+  }
+
+  function trackGenerateLead() {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "generate_lead",
+      event_category: "form",
+      event_label: "landing_page",
+    });
+
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "generate_lead", {
+        event_category: "form",
+        event_label: "landing_page",
+      });
     }
   }
 
@@ -114,6 +132,21 @@
     return { ok: true, simulated: false };
   }
 
+  async function postLeadToSheet(payload) {
+    if (!sheetEndpoint) {
+      return;
+    }
+
+    await fetch(sheetEndpoint, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
   ctas.forEach((cta) => {
     cta.addEventListener("click", () => {
       pushEvent("karter_cta_click", {
@@ -162,6 +195,7 @@
 
     try {
       const result = await postLead(payload);
+      await postLeadToSheet(payload);
 
       window.localStorage.setItem("karter_last_lead", JSON.stringify(payload));
 
@@ -181,6 +215,7 @@
           : "Thanks. Your tour request was submitted successfully.",
         "success"
       );
+      setTimeout(trackGenerateLead, 300);
       setSuccessCard(true);
       successCard?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 

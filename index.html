@@ -277,7 +277,7 @@
             <input type="hidden" name="submitted_at">
 
             <div class="mt-6">
-              <button type="submit" onclick="trackLead()" class="inline-flex min-h-[58px] items-center justify-center rounded-full bg-karter-peach px-8 text-sm font-extrabold uppercase tracking-[0.14em] text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-karter-peachDark">
+              <button type="submit" class="inline-flex min-h-[58px] items-center justify-center rounded-full bg-karter-peach px-8 text-sm font-extrabold uppercase tracking-[0.14em] text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-karter-peachDark">
                 Request My Tour
               </button>
             </div>
@@ -614,14 +614,6 @@
     </div>
   </footer>
 
-  <script>
-    function trackLead() {
-      gtag('event', 'generate_lead', {
-        event_category: 'form',
-        event_label: 'landing_page'
-      });
-    }
-  </script>
   <script src="script.js"></script>
 </body>
 </html>
