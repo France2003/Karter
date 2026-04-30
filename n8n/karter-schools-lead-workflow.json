@@ -1,0 +1,252 @@
+{
+  "name": "Karter Schools Lead Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "karter-schools-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        340
+      ],
+      "webhookId": "karter-schools-lead"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst required = ['parent_name', 'email', 'phone', 'child_age_group', 'timeline', 'preferred_campus'];\nconst missing = required.filter((key) => !String(body[key] ?? '').trim());\nconst nameParts = String(body.parent_name ?? '').trim().split(/\\s+/).filter(Boolean);\nconst firstName = nameParts.shift() ?? '';\nconst lastName = nameParts.join(' ');\nconst now = new Date().toISOString();\nconst campusDirectory = {\n  'Cascades': { address: '21290 Springlake Ct, Sterling, VA 20166', phone: '+17034308657' },\n  'Gainesville': { address: '14130 Glenkirk Rd, Gainesville, VA 20155', phone: '+17037540946' },\n  'One Loudoun': { address: '44799 Saranac St, Ashburn, VA 20147', phone: '+17039555337' },\n  'South Riding': { address: '25235 Elk Lick Rd, South Riding, VA 20152', phone: '+17033272003' },\n  'Karter Little Wins': { address: '43244 Hay Rd, Ashburn, VA 20147', phone: '+17035745113' },\n  'Parker': { address: '19920 Hilltop Rd, Parker, CO 80134', phone: '+17204461861' },\n  'Thornton': { address: '4155 E. 128th Ave., Thornton, CO 80241', phone: '+17204460177' },\n};\nconst campusName = String(body.preferred_campus ?? '').trim();\nconst campusMeta = campusDirectory[campusName] ?? { address: String(body.campus_address ?? '').trim(), phone: String(body.campus_phone ?? '').trim() };\nconst normalized = {\n  valid: missing.length === 0,\n  error: missing.length ? `Missing required fields: ${missing.join(', ')}` : '',\n  source: 'karter-schools-landing-page',\n  submitted_at: body.submitted_at || now,\n  parent_name: String(body.parent_name ?? '').trim(),\n  first_name: firstName,\n  last_name: lastName,\n  email: String(body.email ?? '').trim().toLowerCase(),\n  phone: String(body.phone ?? '').trim(),\n  child_age_group: String(body.child_age_group ?? '').trim(),\n  timeline: String(body.timeline ?? '').trim(),\n  preferred_time: String(body.preferred_time ?? '').trim(),\n  preferred_campus: campusName,\n  campus_address: campusMeta.address || '',\n  campus_phone: campusMeta.phone || '',\n  message: String(body.message ?? '').trim(),\n  consent: String(body.consent ?? '').trim(),\n  landing_url: String(body.landing_url ?? '').trim(),\n  page_title: String(body.page_title ?? '').trim(),\n  referrer: String(body.referrer ?? '').trim(),\n  utm_source: String(body.utm_source ?? '').trim(),\n  utm_medium: String(body.utm_medium ?? '').trim(),\n  utm_campaign: String(body.utm_campaign ?? '').trim(),\n  utm_content: String(body.utm_content ?? '').trim(),\n  utm_term: String(body.utm_term ?? '').trim(),\n  tags: ['Karter', campusName || 'Unknown Campus', 'Website Lead'],\n  lead_id: `karter-${Date.now()}`,\n  ghl_enabled: Boolean($env.GHL_API_KEY),\n};\n\nnormalized.ghl_payload = {\n  firstName: normalized.first_name || normalized.parent_name,\n  lastName: normalized.last_name,\n  name: normalized.parent_name,\n  email: normalized.email,\n  phone: normalized.phone,\n  source: normalized.source,\n  tags: normalized.tags,\n  customFields: [\n    { key: 'child_age_group', field_value: normalized.child_age_group },\n    { key: 'timeline', field_value: normalized.timeline },\n    { key: 'preferred_time', field_value: normalized.preferred_time },\n    { key: 'preferred_campus', field_value: normalized.preferred_campus },\n    { key: 'campus_address', field_value: normalized.campus_address },\n    { key: 'campus_phone', field_value: normalized.campus_phone },\n    { key: 'landing_url', field_value: normalized.landing_url },\n    { key: 'utm_source', field_value: normalized.utm_source },\n    { key: 'utm_medium', field_value: normalized.utm_medium },\n    { key: 'utm_campaign', field_value: normalized.utm_campaign },\n    { key: 'message', field_value: normalized.message }\n  ]\n};\n\nreturn [{ json: normalized }];"
+      },
+      "id": "2",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.valid}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Lead Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        740,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.ghl_enabled}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "GHL Enabled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        980,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/contacts/upsert",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GHL_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.ghl_payload}}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Upsert Contact in GHL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1210,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "ghl_status",
+              "value": "skipped",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Skip GHL Sync",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1210,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, leadId: $json.lead_id, campus: $json.preferred_campus, ghl: $json.ghl_status || 'sent', message: 'Lead received' } }}",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: $json.error || 'Invalid lead submission' } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "8",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        980,
+        460
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Lead Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Valid?": {
+      "main": [
+        [
+          {
+            "node": "GHL Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL Enabled?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Contact in GHL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip GHL Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Contact in GHL": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip GHL Sync": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "active": false,
+  "versionId": "1",
+  "id": "karter-schools-lead-workflow",
+  "tags": []
+}
