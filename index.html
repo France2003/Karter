@@ -137,13 +137,48 @@
               </label>
 
               <label class="field">
-                <span>Phone</span>
-                <input class="form-input" type="tel" name="phone" placeholder="Best number for follow-up" required>
-              </label>
-
-              <label class="field">
                 <span>Email</span>
                 <input class="form-input" type="email" name="email" placeholder="name@email.com" required>
+              </label>
+
+              <label class="field field-phone">
+                <span>Phone</span>
+                <div class="phone-field">
+                  <select class="form-input phone-country" name="phone_country_code" aria-label="Phone country code" required>
+                    <option value="+1" selected>US/CA (+1)</option>
+                    <option value="+84">Vietnam (+84)</option>
+                    <option value="+44">UK (+44)</option>
+                    <option value="+61">Australia (+61)</option>
+                    <option value="+64">New Zealand (+64)</option>
+                    <option value="+91">India (+91)</option>
+                    <option value="+81">Japan (+81)</option>
+                    <option value="+82">South Korea (+82)</option>
+                    <option value="+86">China (+86)</option>
+                    <option value="+65">Singapore (+65)</option>
+                    <option value="+60">Malaysia (+60)</option>
+                    <option value="+66">Thailand (+66)</option>
+                    <option value="+62">Indonesia (+62)</option>
+                    <option value="+63">Philippines (+63)</option>
+                    <option value="+49">Germany (+49)</option>
+                    <option value="+33">France (+33)</option>
+                    <option value="+34">Spain (+34)</option>
+                    <option value="+39">Italy (+39)</option>
+                    <option value="+31">Netherlands (+31)</option>
+                    <option value="+41">Switzerland (+41)</option>
+                    <option value="+46">Sweden (+46)</option>
+                    <option value="+47">Norway (+47)</option>
+                    <option value="+45">Denmark (+45)</option>
+                    <option value="+32">Belgium (+32)</option>
+                    <option value="+353">Ireland (+353)</option>
+                    <option value="+971">UAE (+971)</option>
+                    <option value="+966">Saudi Arabia (+966)</option>
+                    <option value="+27">South Africa (+27)</option>
+                    <option value="+55">Brazil (+55)</option>
+                    <option value="+52">Mexico (+52)</option>
+                  </select>
+                  <input class="form-input" type="tel" name="phone" inputmode="tel" placeholder="Phone number" required>
+                </div>
+                <small class="field-help">Choose a country code, then enter the rest of the number.</small>
               </label>
 
               <label class="field">
@@ -170,7 +205,7 @@
                 <input class="form-input" type="time" name="preferred_time" required>
               </label>
 
-              <label class="field">
+              <label class="field field-attendees">
                 <span>Number of attendees</span>
                 <input class="form-input" type="number" name="attendee_count" min="1" max="10" step="1" value="1" required>
               </label>

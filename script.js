@@ -94,6 +94,45 @@
     return payload;
   }
 
+  function formatNationalPhone(digits, countryCode) {
+    if (countryCode === "+1" && digits.length === 10) {
+      return `+1 ${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    if (countryCode === "+84") {
+      if (digits.startsWith("84")) {
+        digits = digits.slice(2);
+      } else if (digits.startsWith("0")) {
+        digits = digits.slice(1);
+      }
+      return `+84 ${digits}`;
+    }
+
+    return `${countryCode} ${digits}`;
+  }
+
+  function normalizePhonePayload(payload) {
+    const rawPhone = String(payload.phone || "").trim();
+    const countryCode = String(payload.phone_country_code || "+1").trim();
+
+    if (!rawPhone) {
+      return payload;
+    }
+
+    if (rawPhone.startsWith("+")) {
+      payload.phone = rawPhone.replace(/[^\d+]/g, "");
+      return payload;
+    }
+
+    const digits = rawPhone.replace(/\D/g, "");
+    if (!digits) {
+      return payload;
+    }
+
+    payload.phone = formatNationalPhone(digits, countryCode);
+    return payload;
+  }
+
   function validate(formElement) {
     const requiredFields = formElement.querySelectorAll("[required]");
 
@@ -188,7 +227,7 @@
       submittedAt.value = new Date().toISOString();
     }
 
-    const payload = serializeForm(form);
+    const payload = normalizePhonePayload(serializeForm(form));
 
     submitButton.disabled = true;
     submitButton.textContent = "Submitting...";
