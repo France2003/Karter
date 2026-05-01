@@ -2,9 +2,11 @@
   const form = document.querySelector(".lead-form");
   const status = document.querySelector(".form-status");
   const successCard = document.querySelector("#form-success-card");
-  const sheetEndpoint =
-    "https://script.google.com/macros/s/AKfycbzaKDdaExKDzNQWz_ZteORowhFYsHOFhZKbLlYuq9vLVd8wkK2t1tTFt9Q0YB7OKMHS2Q/exec";
   const ctas = document.querySelectorAll(".js-track-cta");
+  const reviewSlider = document.querySelector(".review-slider");
+  const reviewTrack = reviewSlider?.querySelector(".review-grid");
+  const reviewPrevButton = document.querySelector('[data-review-nav="prev"]');
+  const reviewNextButton = document.querySelector('[data-review-nav="next"]');
   const url = new URL(window.location.href);
   const utmFields = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 
@@ -56,6 +58,55 @@
     successCard.classList.toggle("hidden", !visible);
   }
 
+  function getReviewStep() {
+    if (!reviewTrack) {
+      return 0;
+    }
+
+    const firstCard = reviewTrack.querySelector(".review-card");
+    if (!firstCard) {
+      return 0;
+    }
+
+    const styles = window.getComputedStyle(reviewTrack);
+    const gap = parseFloat(styles.columnGap || styles.gap || "0");
+    return firstCard.getBoundingClientRect().width + gap;
+  }
+
+  function updateReviewNav() {
+    if (!reviewSlider || !reviewPrevButton || !reviewNextButton) {
+      return;
+    }
+
+    const maxScrollLeft = reviewSlider.scrollWidth - reviewSlider.clientWidth;
+    reviewPrevButton.disabled = reviewSlider.scrollLeft <= 8;
+    reviewNextButton.disabled = reviewSlider.scrollLeft >= maxScrollLeft - 8;
+  }
+
+  function setupReviewSlider() {
+    if (!reviewSlider || !reviewTrack || !reviewPrevButton || !reviewNextButton) {
+      return;
+    }
+
+    function scrollReviews(direction) {
+      const step = getReviewStep();
+      if (!step) {
+        return;
+      }
+
+      reviewSlider.scrollBy({
+        left: direction * step,
+        behavior: "smooth",
+      });
+    }
+
+    reviewPrevButton.addEventListener("click", () => scrollReviews(-1));
+    reviewNextButton.addEventListener("click", () => scrollReviews(1));
+    reviewSlider.addEventListener("scroll", updateReviewNav, { passive: true });
+    window.addEventListener("resize", updateReviewNav);
+    updateReviewNav();
+  }
+
   function fillTrackingFields() {
     if (!form) {
       return;
@@ -81,6 +132,31 @@
         input.value = value;
       }
     });
+  }
+
+  function setFieldError(field, message) {
+    field.setCustomValidity(message);
+    field.reportValidity();
+    field.focus();
+  }
+
+  function clearFieldErrors(formElement) {
+    formElement.querySelectorAll("input, select, textarea").forEach((field) => {
+      field.setCustomValidity("");
+    });
+  }
+
+  function initializeFormConstraints() {
+    if (!form) {
+      return;
+    }
+
+    const dateInput = form.querySelector('[name="preferred_date"]');
+    if (dateInput) {
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      dateInput.min = localDate;
+    }
   }
 
   function serializeForm(formElement) {
@@ -134,6 +210,7 @@
   }
 
   function validate(formElement) {
+    clearFieldErrors(formElement);
     const requiredFields = formElement.querySelectorAll("[required]");
 
     for (const field of requiredFields) {
@@ -141,12 +218,46 @@
       const missingValue = isCheckbox ? !field.checked : !field.value.trim();
 
       if (missingValue) {
-        field.focus();
-        return false;
+        const message = isCheckbox
+          ? "Please confirm consent before submitting."
+          : `Please complete the ${field.closest("label")?.querySelector("span")?.textContent?.trim() || field.name} field.`;
+        setFieldError(field, message);
+        return { ok: false, message };
       }
     }
 
-    return true;
+    const emailField = formElement.querySelector('[name="email"]');
+    if (emailField && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value.trim())) {
+      const message = "Please enter a valid email address.";
+      setFieldError(emailField, message);
+      return { ok: false, message };
+    }
+
+    const phoneField = formElement.querySelector('[name="phone"]');
+    if (phoneField) {
+      const digits = phoneField.value.replace(/\D/g, "");
+      if (digits.length < 7) {
+        const message = "Please enter a valid phone number.";
+        setFieldError(phoneField, message);
+        return { ok: false, message };
+      }
+    }
+
+    const dateField = formElement.querySelector('[name="preferred_date"]');
+    if (dateField && dateField.min && dateField.value && dateField.value < dateField.min) {
+      const message = "Please choose a tour date that is today or later.";
+      setFieldError(dateField, message);
+      return { ok: false, message };
+    }
+
+    const timeField = formElement.querySelector('[name="preferred_time"]');
+    if (timeField && !timeField.value) {
+      const message = "Please choose a preferred tour time.";
+      setFieldError(timeField, message);
+      return { ok: false, message };
+    }
+
+    return { ok: true };
   }
 
   async function postLead(payload) {
@@ -171,21 +282,6 @@
     return { ok: true, simulated: false };
   }
 
-  async function postLeadToSheet(payload) {
-    if (!sheetEndpoint) {
-      return;
-    }
-
-    await fetch(sheetEndpoint, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-  }
-
   ctas.forEach((cta) => {
     cta.addEventListener("click", () => {
       pushEvent("karter_cta_click", {
@@ -196,6 +292,8 @@
   });
 
   fillTrackingFields();
+  initializeFormConstraints();
+  setupReviewSlider();
 
   pushEvent("karter_page_view", {
     page_path: window.location.pathname,
@@ -214,8 +312,9 @@
     setStatus("", "");
     setSuccessCard(false);
 
-    if (!validate(form)) {
-      setStatus("Please complete all required fields before submitting.", "error");
+    const validation = validate(form);
+    if (!validation.ok) {
+      setStatus(validation.message || "Please complete all required fields before submitting.", "error");
       return;
     }
 
@@ -234,7 +333,6 @@
 
     try {
       const result = await postLead(payload);
-      await postLeadToSheet(payload);
 
       window.localStorage.setItem("karter_last_lead", JSON.stringify(payload));
 
