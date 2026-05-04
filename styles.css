@@ -1239,14 +1239,21 @@ h2 {
 .programs .section-head,
 .tour-benefits .section-head,
 .tour-process .section-head,
-.reviews .section-head {
+.reviews .section-head,
+.faq .section-head {
   max-width: 100%;
 }
 
 .tour-benefits .benefit-grid,
 .tour-process .benefit-grid,
+.faq .benefit-grid,
 .review-grid {
   margin-top: 1.9rem;
+}
+
+.faq .benefit-card {
+  border: 1px solid rgba(29, 79, 145, 0.12);
+  box-shadow: 0 24px 52px rgba(26, 48, 82, 0.1);
 }
 
 .final-cta-actions {
