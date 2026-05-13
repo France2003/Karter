@@ -790,6 +790,7 @@ h2 {
 .quick-facts,
 .mindset,
 .programs,
+.availability,
 .proof,
 .reviews,
 .final-cta,
@@ -1361,6 +1362,7 @@ h2 {
 }
 
 .programs .section-head,
+.availability .section-head,
 .karter-difference .section-head,
 .inside-campus .section-head,
 .reviews .section-head,
@@ -1369,6 +1371,7 @@ h2 {
 }
 
 .programs .section-head,
+.availability .section-head,
 .karter-difference .section-head,
 .inside-campus .section-head,
 .reviews .section-head {
@@ -1378,6 +1381,7 @@ h2 {
 }
 
 .programs .section-head::after,
+.availability .section-head::after,
 .karter-difference .section-head::after,
 .inside-campus .section-head::after,
 .reviews .section-head::after {
@@ -1385,11 +1389,13 @@ h2 {
   transform: translateX(-50%);
 }
 
+.availability .benefit-grid,
 .faq .benefit-grid,
 .review-grid {
   margin-top: 1.9rem;
 }
 
+.availability .benefit-card,
 .faq .benefit-card {
   border: 1px solid rgba(29, 79, 145, 0.12);
   box-shadow: 0 24px 52px rgba(26, 48, 82, 0.1);
@@ -1735,8 +1741,8 @@ h2 {
     justify-content: end;
   }
 
-  .hero-trust-actions .primary-button,
-  .hero-trust-actions .secondary-button {
+  .hero-actions .primary-button,
+  .hero-actions .secondary-button {
     min-height: 2.9rem;
     width: 2.9rem;
     min-width: 2.9rem;
