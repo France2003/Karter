@@ -3,6 +3,7 @@
   const status = document.querySelector(".form-status");
   const successCard = document.querySelector("#form-success-card");
   const ctas = document.querySelectorAll(".js-track-cta");
+  const tourNotes = document.querySelector("#tour-notes");
   const reviewSlider = document.querySelector(".review-slider");
   const reviewTrack = reviewSlider?.querySelector(".review-grid");
   const reviewPrevButton = document.querySelector('[data-review-nav="prev"]');
@@ -288,6 +289,12 @@
         cta_name: cta.dataset.cta || cta.textContent.trim(),
         page_path: window.location.pathname,
       });
+
+      if (cta.getAttribute("href") === "#tour-notes" && tourNotes) {
+        window.setTimeout(() => {
+          tourNotes.focus({ preventScroll: true });
+        }, 120);
+      }
     });
   });
 
